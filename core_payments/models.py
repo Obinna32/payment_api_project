@@ -19,6 +19,12 @@ class TransactionStatus(models.TextChoices):
 
     CHARGEBACK_INITIATED = "CHARGEBACK_INITIATED", "Chargeback Initiated"
     CHARGEBACK_RESOLVED = "CHARGEBACK_RESOLVED", "Chargeback Resolved"
+
+class PayoutStatus(models.TextChoices):
+    REQUESTED = "REQUESTED", "Requested"
+    PROCESSING = "PROCESSING", "Processing"
+    COMPLETED = "COMPLETED", "Completed"
+    FAILED = "FAILED", "Failed"
 class VendorProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='vendor_profile')
     available_balance = models.DecimalField(max_digits=12, decimal_places=2, default=0.00, validators=[MinValueValidator(0.00)], help_text="Funds immediately available for payout.")
