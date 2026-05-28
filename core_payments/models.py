@@ -25,6 +25,13 @@ class PayoutStatus(models.TextChoices):
     PROCESSING = "PROCESSING", "Processing"
     COMPLETED = "COMPLETED", "Completed"
     FAILED = "FAILED", "Failed"
+
+class PaymentMethodType(models.TextChoices):
+    CARD = "CARD", "Credit/Debit Card"
+    MOBILE_MONEY = "MOBILE_MONEY", "Mobile Money"
+    BANK_ACCOUNT = "BANK_ACCOUNT", "Bank Account"
+
+class
 class VendorProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='vendor_profile')
     available_balance = models.DecimalField(max_digits=12, decimal_places=2, default=0.00, validators=[MinValueValidator(0.00)], help_text="Funds immediately available for payout.")
