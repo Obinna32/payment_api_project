@@ -31,7 +31,9 @@ class PaymentMethodType(models.TextChoices):
     MOBILE_MONEY = "MOBILE_MONEY", "Mobile Money"
     BANK_ACCOUNT = "BANK_ACCOUNT", "Bank Account"
 
-class
+class PayoutMethodType(models.TextChoices):
+    BANK_ACCOUNT = "BANK_ACCOUNT", "Bank Account"
+    MOBILE_MONEY = "MOBILE_MONEY", "Mobile Money"
 class VendorProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='vendor_profile')
     available_balance = models.DecimalField(max_digits=12, decimal_places=2, default=0.00, validators=[MinValueValidator(0.00)], help_text="Funds immediately available for payout.")
