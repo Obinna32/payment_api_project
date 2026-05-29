@@ -84,3 +84,21 @@ class Transaction(models.Model):
 
     def __str__(self):
         return f"Transaction {self.id} for {self.amount} {self.currency} - Status: {self.status}"
+    
+class Payout(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    vendor_profile = models.ForeignKey(VendorProfile, on_delete=models.CASCADE, related_name='payouts')
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    currency = models.CharField(max_length=3, default="NGN")
+    payout_method = models.ForeignKey(PaymentMethod, on_delete=models.SET_NULL, null=True, blank=True, help_text="The method used for this payout.")
+    status = models.CharField(max_length=20, choices=PayoutStatus.choices, default=PayoutStatus.REQUESTED)
+    gateway_reference = models.CharField(max_length=255, unique=True, null=True, blank=True, help_text="Reference ID from the external payout gateway.")
+    description = models.CharField(max_length=255, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-creatd_at']
+
+    def __str__(self):
+        return f"Payout {self.id} for {self.vendor_profile.user.username} - {self.amount} {self.currency} - Status: {self.status}"
