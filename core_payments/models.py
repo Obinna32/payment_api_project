@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator
+from decimal import Decimal
 
 # Create your models here.
 
@@ -36,24 +37,25 @@ class PayoutMethodType(models.TextChoices):
     MOBILE_MONEY = "MOBILE_MONEY", "Mobile Money"
 class VendorProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='vendor_profile')
-    available_balance = models.DecimalField(max_digits=12, decimal_places=2, default=0.00, validators=[MinValueValidator(0.00)], help_text="Funds immediately available for payout.")
-    pending_balance = models.DecimalField(max_digits=12, decimal_places=2, default=0.00, validators=[MinValueValidator(0.00)], help_text="Funds held in escrow, awaiting customer confirmation or timeout")
+    available_balance = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.00"), help_text="Funds immediately available for payout.")
+    pending_balance = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.00"), help_text="Funds held in escrow, awaiting customer confirmation or timeout")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateField(auto_now=True)
 
     def __str__(self):
         return f"Vendor Profile for {self.user.username}"
-    
-    def update_balance(self, amount, is_pending=True):
-        if is_pending:
-            self.pending_balance += amount
-            if self.pending_balance < 0:
-                raise ValueError("Pending balance cannot go less than zero.")
-        else:
-            self.available_balance += amount
-            if self.available_balance < 0:
-                raise ValueError("Available balance cannot go below zero.")
-        self.save()
 
 class PaymentMethod(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='payment_methods')
+    method_type = models.CharField(max_length=20, choices=PaymentMethodType.choices, default=PaymentMethodType.CARD)
+    gateway_token = models.CharField(max_length=255, unique=True, help_text="Tokenized representation from the payment gateway (e.g., Stripe PaymentMethod ID, Flutterwave card token). DO NOT STORE RAW CARD DATA.")
+    details = models.JSONField(blank=True, null=True, help_text="Masked details like card brand, last 4 digits, expiry month/year for user recognition.")
+    is_default = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('user', 'gateway_token')
+
+    def __str__(self):
+        return f"{self.user.username}'s {self.get_method_type_display()} ({self.details.get('last4', '****') if self.details else 'No Details'})"
