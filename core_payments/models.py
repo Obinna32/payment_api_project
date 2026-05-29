@@ -73,7 +73,7 @@ class PayoutMethod(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        unique_together = ('vendor_profile' 'gateway_token')
+        unique_together = ('vendor_profile', 'gateway_token')
 
     def __str__(self):
         return f"{self.vendor_profile.user.username}'s Payout: {self.get_method_type_display()} ({self.details.get('last4', '****') if self.details else 'No Details'})"
