@@ -62,6 +62,23 @@ class PaymentMethod(models.Model):
     def __str__(self):
         return f"{self.user.username}'s {self.get_method_type_display()} ({self.details.get('last4', '****') if self.details else 'No Details'})"
     
+class PayoutMethod(models.Model):
+    vendor_profile = models.ForeignKey(VendorProfile, on_delete=models.CASCADE, related_name='payout_methods')
+    method_type = models.CharField(max_length=20, choices=PayoutMethodType.choices, default=PaymentMethodType.BANK_ACCOUNT)
+    gateway_token = models.CharField(max_length=255, unique=True, help_text="Tokenized representation from the payout gateway (e.g., Flutterwave bank account token).")
+    details = models.JSONField(blank=True, null=True, help_text="Masked details like bank name, account number last 4 digits, or mobile money number for vendor recognition.")
+    is_default = models.BooleanField(default=False)
+    is_active= models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('vendor_profile' 'gateway_token')
+
+    def __str__(self):
+        return f"{self.vendor_profile.user.username}'s Payout: {self.get_method_type_display()} ({self.details.get('last4', '****') if self.details else 'No Details'})"
+
+    
 class Transaction(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='transactions', help_text="The customer who initiated the transaction.")
