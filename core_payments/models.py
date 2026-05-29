@@ -2,6 +2,8 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator
 from decimal import Decimal
+import uuid
+from django.utils import timezone
 
 # Create your models here.
 
@@ -59,3 +61,26 @@ class PaymentMethod(models.Model):
 
     def __str__(self):
         return f"{self.user.username}'s {self.get_method_type_display()} ({self.details.get('last4', '****') if self.details else 'No Details'})"
+    
+class Transaction(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='transactions', help_text="The customer who initiated the transaction.")
+    vendor_profile = models.ForeignKey(VendorProfile, on_delete=models.CASCADE, null=True, blank=True, related_name="received_transactions", help_text="The vendor profile receiving funds for this transaction (if applicable).")
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    currency = models.CharField(max_length=3, default="NGN")
+    status = models.CharField(max_length=30, choices=TransactionStatus.choices, default=TransactionStatus.PENDING)
+    payment_method = models.ForeignKey(PaymentMethod, on_delete=models.SET_NULL, null=True, blank=True, help_text="The customer's payment method used for this transaction.")
+    gateway_reference = models.CharField(max_length=255, unique=True, null=True, blank=True, help_text="The Unique ID provided by the external payment gateway for this transaction.")
+    transaction_type = models.CharField(max_length=50, help_text="E.g., 'charge', 'escrow_charge', 'refund', 'payout_transfer_to_vendor' (though payouts will have their own model)")
+    description = models.CharField(max_length=255, blank=True, null=True)
+    metadata = models.JSONField(blank=True, null=True, help_text="Additional JSON data for the transaction.")
+
+    held_until_at = models.DateTimeField(null=True, blank=True, help_text="Timestamp when held funds automatically release to vendor if not confirmed by customer.")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Transaction {self.id} for {self.amount} {self.currency} - Status: {self.status}"
