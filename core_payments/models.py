@@ -98,7 +98,7 @@ class Payout(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ['-creatd_at']
+        ordering = ['-created_at']
 
     def __str__(self):
         return f"Payout {self.id} for {self.vendor_profile.user.username} - {self.amount} {self.currency} - Status: {self.status}"
