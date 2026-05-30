@@ -69,3 +69,16 @@ class PaymentMethodViewSet(viewsets.ModelViewSet):
     
     def perform_create(self, serializer):
         serializer.save(User=self.request.user)
+
+class PayoutMethodViewSet(viewsets.ModelViewSet):
+    queryset = PayoutMethod.objects.all()
+    serializer_class = PayoutMethodSerializer
+    permission_classes = [IsAuthenticated, IsVendor]
+
+    def get_queryset(self):
+        if hasattr(self.request.user, 'vendor_profile'):
+            return self.queryset.filter(vendor_profile=self.request.user.vendor_profile)
+        return self.queryset.none()
+    
+    def perform_create(self, serializer):
+        serializer.save(vendor_profile = self.request.user.vendor_profile)
