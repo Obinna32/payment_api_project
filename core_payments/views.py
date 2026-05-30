@@ -1,4 +1,4 @@
-from rest_framework import viewsets, mixins, status
+from rest_framework import viewsets, mixins, status, serializers
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
@@ -38,4 +38,22 @@ class UserViewSet(mixins.RetrieveModelMixin, mixins.UpdateModelMixin, viewsets.G
     def get_object(self):
         return self.request.user
     
-class
+class VendorProfileViewSet(viewsets.ModelViewSet):
+    queryset = VendorProfile.objects.all()
+    serializer_class = VendorProfileSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        if self.request.user.is_authenticated and hasattr(self.request.user, 'vendor_profile'):
+            return self.queryset.filter(user=self.request.user)
+        return self.queryset.none()
+    
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
+    
+    def perform_create(self, serializer):
+        if hasattr(self.request.user, 'vendor_profile'):
+            raise serializers.ValidationError("User already has a vendor profile.")
+        serializer.save(user=self.request.user)
