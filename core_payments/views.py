@@ -57,3 +57,15 @@ class VendorProfileViewSet(viewsets.ModelViewSet):
         if hasattr(self.request.user, 'vendor_profile'):
             raise serializers.ValidationError("User already has a vendor profile.")
         serializer.save(user=self.request.user)
+
+
+class PaymentMethodViewSet(viewsets.ModelViewSet):
+    queryset = PaymentMethod.objects.all()
+    serializer_class = PaymentMethodSerializer
+    permission_classes = [IsAuthenticated, IsOwner]
+
+    def get_queryset(self):
+        return self.queryset.filter(user=self.request.user)
+    
+    def perform_create(self, serializer):
+        serializer.save(User=self.request.user)
