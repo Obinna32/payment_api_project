@@ -15,3 +15,27 @@ from .models import VendorProfile, PaymentMethod, PayoutMethod, Transaction, Pay
 from .serializers import UserSerializer, VendorProfileSerializer, PaymentMethodSerializer, PayoutMethodSerializer, TransactionSerializer, PayoutSerializer
 
 # Create your views here.
+class IsVendor(IsAuthenticated):
+    def has_permission(self, request, view):
+        return super().has_permission(request, view) and hasattr(request.user, 'vendor_profile')
+    
+    def has_object_permission(self, request, view, obj):
+        if hasattr(obj, 'vendor_profile'):
+            return obj.vendor_profile.user == request.user
+        elif hasattr(obj, 'user') and hasattr(obj.user, 'vendor_profile'):
+            return obj.user.vendor_profile.user == request.user
+        return False
+    
+class IsOwner(IsAuthenticated):
+    def has_object_permission(self, request, view, obj):
+        return obj.user == request.user
+
+class UserViewSet(mixins.RetrieveModelMixin, mixins.UpdateModelMixin, viewsets.GenericViewSet):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self):
+        return self.request.user
+    
+class
