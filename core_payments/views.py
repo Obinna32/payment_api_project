@@ -182,3 +182,30 @@ class TransactionViewSet(viewsets.ModelViewSet):
 
         serializer = self.get_serializer(transaction_to_refund)
         return Response(serializer.data, status=status.HTTP_200_OK)
+    
+class PayoutViewSet(viewsets.ModelViewSet):
+    queryset = Payout.objects.all()
+    serializer_class = PayoutSerializer
+    permission_classes = [IsAuthenticated, IsVendor]
+
+    def get_queryset(self):
+        if hasattr(self.request.user, 'vendor_profile'):
+            return self.queryset.filter(vendor_profile=self.request.user.vendor_profile)
+        return self.queryset.none()
+
+    def perform_create(self, serializer):
+        with db_transaction.atomic():
+            vendor_profile = self.request.user.vendor_profile
+            amount = serializer.validated_data['amount']
+
+            vendor_profile.available_balance -= amount
+            vendor_profile.save()
+
+            payout_request = serializer.save(
+                vendor_profile=vendor_profile,
+                status=PayoutStatus.REQUESTED
+            )
+            payout_request.status = PayoutStatus.COMPLETED
+
+            payout_request.gateway_reference = f"mock_payout_ref_{uuid.uuid4().hex}"
+            payout_request.save()
